@@ -20,11 +20,42 @@ export class AuthService {
       prompt: 'consent',
       state: userId || undefined,
       scope: [
+        // ── Identity ────────────────────────────────────────────────────────
+        // Fetch the user's email and basic profile on login.
+        'openid',
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email',
+
+        // ── YouTube Data API (Core) ──────────────────────────────────────────
+        // force-ssl: Google's recommended write scope — covers channels.list,
+        // videos.update, captions, ratings, comments. Supersedes youtube +
+        // youtube.readonly so those are intentionally omitted.
+        'https://www.googleapis.com/auth/youtube.force-ssl',
+
+        // upload: explicitly required for videos.insert (resumable uploads).
         'https://www.googleapis.com/auth/youtube.upload',
-        'https://www.googleapis.com/auth/youtube.readonly',
-        'https://www.googleapis.com/auth/youtube',
+
+        // download: allows downloading the user's own public YouTube videos.
+        'https://www.googleapis.com/auth/youtube.download',
+
+        // ── YouTube Channel Memberships ──────────────────────────────────────
+        // List active channel members, their tier, and join date.
+        'https://www.googleapis.com/auth/youtube.channel-memberships.creator',
+
+        // ── YouTube Third-Party Linking ──────────────────────────────────────
+        // Link the app to the user's YouTube channel and manage app info.
+        'https://www.googleapis.com/auth/youtube.third-party-link.creator',
+
+        // ── YouTube Partner (Content ID / Asset Management) ─────────────────
+        // Manage assets, claims, policies, and associated partner content.
+        'https://www.googleapis.com/auth/youtubepartner',
+
+        // ── YouTube Analytics ────────────────────────────────────────────────
+        // Standard analytics: views, watch time, traffic sources, demographics.
+        'https://www.googleapis.com/auth/yt-analytics.readonly',
+
+        // Monetary analytics: revenue, estimated earnings, ad performance.
+        'https://www.googleapis.com/auth/yt-analytics-monetary.readonly',
       ],
     });
   }
