@@ -10,6 +10,7 @@ import authRoutes from './features/auth/auth.routes.js';
 import youtubeRoutes from './features/youtube/youtube.routes.js';
 import redditRoutes from './features/reddit/reddit.routes.js';
 import narrationRoutes from './features/narration/narration.routes.js';
+import captionsRoutes from './features/captions/captions.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { NotFoundError } from './utils/custom-errors.js';
 
@@ -44,6 +45,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/youtube', youtubeRoutes);
 app.use('/api/v1/reddit', redditRoutes);
 app.use('/api/v1/narration', narrationRoutes);
+app.use('/api/v1/captions', captionsRoutes);
 
 // Catch-all for undefined routes
 app.use('*', (req, _res, next) => {
