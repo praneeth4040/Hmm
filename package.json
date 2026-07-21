@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc && npm run copy:assets",
-    "copy:assets": "find src -name '*.json' ! -name 'tsconfig*.json' | while read f; do dest=\"dist/${f#src/}\"; mkdir -p \"$(dirname $dest)\"; cp \"$f\" \"$dest\"; done",
+    "copy:assets": "(find src -name '*.json' ! -name 'tsconfig*.json'; find src -name '*.svg'; find src -name '*.html') | while read f; do dest=\"dist/${f#src/}\"; mkdir -p \"$(dirname $dest)\"; cp \"$f\" \"$dest\"; done",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -37,6 +37,7 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.0",
+    "puppeteer": "^25.3.0",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
     "zod": "^3.23.8"

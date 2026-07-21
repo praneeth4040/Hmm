@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reddit Card</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
+      padding: 20px;
+    }
+    .card {
+      width: 800px;
+      min-height: 200px;
+      background-color: #1a1a1b;
+      border-radius: 20px;
+      padding: 10px;
+      margin: 0 auto;
+    }
+    .card-inner {
+      width: 100%;
+      background-color: #2d2d2f;
+      border-radius: 15px;
+      padding: 10px;
+    }
+    .card-content {
+      width: 100%;
+      background-color: #1a1a1b;
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+    .avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background-color: #ff4500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      color: white;
+      font-weight: bold;
+      margin-right: 20px;
+      overflow: hidden;
+    }
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .user-info .username {
+      font-size: 28px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 5px;
+    }
+    .user-info .user-handle {
+      font-size: 16px;
+      color: #818181;
+    }
+    .text-content {
+      font-size: 32px;
+      color: white;
+      line-height: 1.3;
+      margin-bottom: 40px;
+      word-wrap: break-word;
+    }
+    .footer {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      font-size: 20px;
+      color: #818181;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-inner">
+      <div class="card-content">
+        <div class="header">
+          <div class="avatar">P</div>
+          <div class="user-info">
+            <div class="username">Puppy Redditor</div>
+            <div class="user-handle">u/puppy_redditor</div>
+          </div>
+        </div>
+        <div class="text-content">
+          My family didn't invite me to christmas because it's 'no place for losers' my brother said. I calmly agreed & stopped funding his children and wife. Now he's going crazy...
+        </div>
+        <div class="footer">12:00</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

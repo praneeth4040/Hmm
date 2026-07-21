@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X (Twitter) Card</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f0f2f5;
+      padding: 20px;
+    }
+    .card {
+      width: 800px;
+      min-height: 200px;
+      background-color: #ffffff;
+      border-radius: 16px;
+      padding: 24px;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background-color: #1d9bf0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      margin-right: 12px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .display-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f1419;
+    }
+    .username {
+      font-size: 15px;
+      color: #536471;
+    }
+    .text-content {
+      font-size: 23px;
+      color: #0f1419;
+      line-height: 1.4;
+      margin-bottom: 24px;
+    }
+    .footer {
+      display: flex;
+      align-items: center;
+      color: #536471;
+      font-size: 14px;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="avatar">X</div>
+      <div class="user-info">
+        <div class="display-name">X User</div>
+        <div class="username">@xuser</div>
+      </div>
+    </div>
+    <div class="text-content">
+      This is a tweet that's going viral on X! The quick brown fox jumps over the lazy dog, and everyone is talking about it!
+    </div>
+    <div class="footer">
+      <div>12:00 · Jul 22, 2026</div>
+      <div>·</div>
+      <div>X for iPhone</div>
+    </div>
+  </div>
+</body>
+</html>
