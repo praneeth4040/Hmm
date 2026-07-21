@@ -51,7 +51,7 @@ export class NarrationService {
     this.headers = {
       'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://github.com/projecty',
+      'HTTP-Referer': 'https://github.com/praneeth4040/hmm',
       'X-Title': 'Project Y',
     };
   }

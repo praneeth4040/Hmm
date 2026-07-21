@@ -6,6 +6,48 @@ import { generateNarration, listCategories } from './narration.controller.js';
 
 const router = Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Narration
+ *   description: AI-powered narration generation
+ *
+ * /api/v1/narration/categories:
+ *   get:
+ *     summary: List all available narration categories
+ *     tags: [Narration]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of categories
+ * /api/v1/narration/generate:
+ *   post:
+ *     summary: Generate a narration
+ *     tags: [Narration]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               categoryId:
+ *                 type: string
+ *               storyDetails:
+ *                 type: string
+ *               model:
+ *                 type: string
+ *                 description: Optional model override
+ *               targetWords:
+ *                 type: integer
+ *                 description: Optional target word count
+ *     responses:
+ *       200:
+ *         description: Narration generated
+ */
 // All narration endpoints require authentication
 router.use(authMiddleware as any);
 

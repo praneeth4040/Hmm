@@ -75,3 +75,21 @@ export const getVideoById = async (
     next(error);
   }
 };
+
+export const downloadVideo = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = (req as any).user.id;
+    const { id } = req.params;
+
+    const url = await redditService.getDownloadUrl(id, userId);
+
+    // Redirect the client directly to the Hugging Face presigned URL
+    res.redirect(302, url);
+  } catch (error) {
+    next(error);
+  }
+};

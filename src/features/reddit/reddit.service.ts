@@ -247,6 +247,54 @@ export class RedditService {
 
     return video;
   }
+  /**
+   * Get a presigned download URL for a video from the Hugging Face Bucket.
+   */
+  async getDownloadUrl(videoId: string, userId: string) {
+    const video = await this.getVideoById(videoId, userId);
+
+    if (video.status !== 'READY' || !video.hfBucketUri) {
+      throw new BadRequestError('Video is not ready for download or missing URI');
+    }
+
+    logger.info(`getDownloadUrl: video.hfBucketUri = ${video.hfBucketUri}`);
+    logger.info(`getDownloadUrl: env.HF_NAMESPACE = ${env.HF_NAMESPACE}`);
+    logger.info(`getDownloadUrl: env.HF_BUCKET_NAME = ${env.HF_BUCKET_NAME}`);
+
+    const { S3Client, GetObjectCommand } = await import('@aws-sdk/client-s3');
+    const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+
+    const s3Client = new S3Client({
+      region: 'us-east-1',
+      endpoint: `https://s3.hf.co/${env.HF_NAMESPACE}`,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: env.HF_S3_ACCESS_KEY_ID,
+        secretAccessKey: env.HF_S3_SECRET_ACCESS_KEY,
+      },
+    });
+
+    // Parse hfBucketUri: hf://buckets/<namespace>/<bucket>/<key>
+    const urlParts = video.hfBucketUri.replace('hf://buckets/', '').split('/');
+    const key = urlParts.slice(2).join('/'); // Extract the remoteFileName
+    logger.info(`getDownloadUrl: parsed urlParts = ${JSON.stringify(urlParts)}`);
+    logger.info(`getDownloadUrl: parsed key = ${key}`);
+
+    const command = new GetObjectCommand({
+      Bucket: env.HF_BUCKET_NAME,
+      Key: key,
+      ResponseContentDisposition: `attachment; filename="${key}"`
+    });
+
+    try {
+      const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+      logger.info(`getDownloadUrl: generated presigned URL = ${url}`);
+      return url;
+    } catch (error) {
+      logger.error('Error generating presigned URL from HF bucket:', error);
+      throw new BadRequestError(`Failed to generate download URL from Hugging Face: ${(error as Error).message}`);
+    }
+  }
 }
 
 export const redditService = new RedditService();
