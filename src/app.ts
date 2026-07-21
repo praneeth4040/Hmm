@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import healthRoutes from './features/health/health.routes.js';
 import usersRoutes from './features/users/users.routes.js';
+import authRoutes from './features/auth/auth.routes.js';
+import youtubeRoutes from './features/youtube/youtube.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { NotFoundError } from './utils/custom-errors.js';
 
@@ -18,6 +20,8 @@ app.use(morgan('dev'));
 // API Routes
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/users', usersRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/youtube', youtubeRoutes);
 
 // Catch-all for undefined routes
 app.use('*', (req, _res, next) => {
