@@ -12,6 +12,12 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1, { message: 'GOOGLE_CLIENT_ID is required' }),
   GOOGLE_CLIENT_SECRET: z.string().min(1, { message: 'GOOGLE_CLIENT_SECRET is required' }),
   GOOGLE_REDIRECT_URI: z.string().url({ message: 'GOOGLE_REDIRECT_URI must be a valid URL' }),
+
+  // Hugging Face Storage Bucket (S3 Gateway API)
+  HF_NAMESPACE: z.string().min(1, { message: 'HF_NAMESPACE is required (e.g. Praneeth4040)' }),
+  HF_BUCKET_NAME: z.string().min(1, { message: 'HF_BUCKET_NAME is required (e.g. reddit-videos)' }),
+  HF_S3_ACCESS_KEY_ID: z.string().min(1, { message: 'HF_S3_ACCESS_KEY_ID is required (starts with HFAK...)' }),
+  HF_S3_SECRET_ACCESS_KEY: z.string().min(1, { message: 'HF_S3_SECRET_ACCESS_KEY is required' }),
 });
 
 const parsed = envSchema.safeParse(process.env);
