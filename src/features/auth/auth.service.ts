@@ -13,11 +13,12 @@ export class AuthService {
     );
   }
 
-  getAuthUrl() {
+  getAuthUrl(userId?: string) {
     const oauth2Client = this.getOAuth2Client();
     return oauth2Client.generateAuthUrl({
       access_type: 'offline',
       prompt: 'consent',
+      state: userId || undefined,
       scope: [
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email',
@@ -28,7 +29,7 @@ export class AuthService {
     });
   }
 
-  async handleGoogleCallback(code: string) {
+  async handleGoogleCallback(code: string, state?: string) {
     const oauth2Client = this.getOAuth2Client();
     
     try {
@@ -47,17 +48,40 @@ export class AuthService {
         throw new BadRequestError('Google profile did not contain a unique ID');
       }
 
-      // 1. Upsert the User record
-      const user = await prisma.user.upsert({
-        where: { email: profile.email },
-        update: { name: profile.name },
-        create: {
-          email: profile.email,
-          name: profile.name,
-        },
-      });
+      let user;
 
-      // 2. Upsert the Account connection
+      // Case 1: Linking a Brand Channel or Account to an active user session
+      if (state) {
+        const existingUser = await prisma.user.findUnique({
+          where: { id: state },
+        });
+
+        if (!existingUser) {
+          throw new BadRequestError('User session associated with Google login was not found');
+        }
+
+        user = existingUser;
+      } else {
+        // Case 2: Fresh Login/Registration
+        // Block brand accounts from starting fresh signups
+        if (profile.email.endsWith('@pages.plusgoogle.com')) {
+          throw new BadRequestError(
+            'Cannot authenticate directly using a YouTube Brand Account. Please sign in with your primary Google Account first, then connect your YouTube channel.'
+          );
+        }
+
+        // Upsert primary user
+        user = await prisma.user.upsert({
+          where: { email: profile.email },
+          update: { name: profile.name },
+          create: {
+            email: profile.email,
+            name: profile.name,
+          },
+        });
+      }
+
+      // Upsert the Account connection under the resolved user
       const expiresAt = tokens.expiry_date ? new Date(tokens.expiry_date) : null;
 
       await prisma.account.upsert({
@@ -70,7 +94,7 @@ export class AuthService {
         update: {
           email: profile.email,
           accessToken: tokens.access_token,
-          ...(tokens.refresh_token && { refreshToken: tokens.refresh_token }), // Keep old if not provided
+          ...(tokens.refresh_token && { refreshToken: tokens.refresh_token }),
           expiresAt,
           scope: tokens.scope,
         },
@@ -86,7 +110,7 @@ export class AuthService {
         },
       });
 
-      // 3. Issue a JWT session token
+      // Issue/Refresh the JWT session token
       const sessionToken = jwt.sign({ userId: user.id }, env.JWT_SECRET, {
         expiresIn: '7d',
       });
@@ -96,6 +120,7 @@ export class AuthService {
         token: sessionToken,
       };
     } catch (error) {
+      if (error instanceof BadRequestError) throw error;
       throw new BadRequestError(`Google authentication failed: ${(error as Error).message}`);
     }
   }
