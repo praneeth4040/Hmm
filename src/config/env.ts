@@ -18,6 +18,9 @@ const envSchema = z.object({
   HF_BUCKET_NAME: z.string().min(1, { message: 'HF_BUCKET_NAME is required (e.g. reddit-videos)' }),
   HF_S3_ACCESS_KEY_ID: z.string().min(1, { message: 'HF_S3_ACCESS_KEY_ID is required (starts with HFAK...)' }),
   HF_S3_SECRET_ACCESS_KEY: z.string().min(1, { message: 'HF_S3_SECRET_ACCESS_KEY is required' }),
+
+  // OpenRouter LLM API
+  OPENROUTER_API_KEY: z.string().min(1, { message: 'OPENROUTER_API_KEY is required' }),
 });
 
 const parsed = envSchema.safeParse(process.env);

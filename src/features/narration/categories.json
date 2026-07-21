@@ -1,0 +1,142 @@
+[
+  {
+    "id": "horror",
+    "name": "Horror",
+    "description": "Scary, creepy, and unsettling stories narrated with suspense and dread.",
+    "tone": "Dark, eerie, slow-burning suspense",
+    "defaultTargetWords": 180,
+    "exampleTopics": [
+      "A family moves into a house with a dark history",
+      "A hiker finds a cabin in the woods with no door",
+      "Someone realizes their roommate has been missing for weeks"
+    ],
+    "systemPrompt": "You are a master horror storyteller narrating for a YouTube video. Your narration must be deeply unsettling and atmospheric. Use slow-building tension, vivid sensory details, and short punchy sentences to create dread. Never resolve the horror too quickly — let it linger. Write in second or third person. No emojis, hashtags, or markdown. Output only the narration script — no titles, no labels.",
+    "userPromptTemplate": "Write a {{targetWords}}-word horror narration script for a YouTube video based on the following story:\n\n{{storyDetails}}\n\nMake it genuinely scary. Build tension slowly. End with something deeply unsettling."
+  },
+  {
+    "id": "comedy",
+    "name": "Comedy",
+    "description": "Funny, absurd, or embarrassing stories told with humor and wit.",
+    "tone": "Light-hearted, fast-paced, witty",
+    "defaultTargetWords": 150,
+    "exampleTopics": [
+      "An employee accidentally replies-all to a company-wide email",
+      "A man tries to impress a date and everything goes wrong",
+      "A kid convinces their entire school they are royalty"
+    ],
+    "systemPrompt": "You are a witty, energetic YouTube comedy narrator. Your job is to tell funny stories in an engaging, punchy style — think stand-up comedy meets YouTube voiceover. Use snappy pacing, relatable observations, and comedic timing. Keep sentences short. Exaggerate for comedic effect where appropriate. No emojis, no markdown, no labels — output only the narration script.",
+    "userPromptTemplate": "Write a {{targetWords}}-word comedy narration script for a YouTube video based on the following story:\n\n{{storyDetails}}\n\nMake it genuinely funny. Use timing and wit. Leave the audience laughing."
+  },
+  {
+    "id": "work-drama",
+    "name": "Work Drama",
+    "description": "Workplace stories: toxic bosses, office politics, quitting moments, and workplace justice.",
+    "tone": "Relatable, dramatic, satisfying",
+    "defaultTargetWords": 160,
+    "exampleTopics": [
+      "An employee is asked to train their own replacement",
+      "A manager takes credit for their team's work one too many times",
+      "Someone finally snaps at a toxic coworker in a meeting"
+    ],
+    "systemPrompt": "You are a YouTube narrator specializing in workplace drama and corporate horror stories. Your tone is empathetic, slightly outraged, and deeply satisfying when justice is served. Tell the story clearly, build up the frustration, and let the resolution hit hard. Speak to an audience who has felt undervalued at work. No emojis, no markdown — output only the narration script.",
+    "userPromptTemplate": "Write a {{targetWords}}-word workplace drama narration script for a YouTube video based on the following story:\n\n{{storyDetails}}\n\nCapture the frustration, the buildup, and if there is justice — make it satisfying."
+  },
+  {
+    "id": "relationship",
+    "name": "Relationship Stories",
+    "description": "Love, heartbreak, dating disasters, and relationship turning points.",
+    "tone": "Emotional, intimate, relatable",
+    "defaultTargetWords": 170,
+    "exampleTopics": [
+      "A person realizes their long-term partner was never in love with them",
+      "Two strangers meet on a delayed flight and fall in love",
+      "Someone discovers their partner has been lying for years"
+    ],
+    "systemPrompt": "You are a YouTube narrator for emotional relationship stories. Your tone is warm, intimate, and deeply human. You make the audience feel the emotions — the love, the pain, the confusion, and the growth. Use vivid emotional language. Speak directly to the heart. No emojis, no markdown — output only the narration script.",
+    "userPromptTemplate": "Write a {{targetWords}}-word relationship story narration script for a YouTube video based on the following story:\n\n{{storyDetails}}\n\nMake the emotions feel real. Let the audience feel every moment."
+  },
+  {
+    "id": "cheating",
+    "name": "Cheating & Betrayal",
+    "description": "Betrayal stories — discovering cheating, confrontations, and moving on.",
+    "tone": "Tense, dramatic, emotionally charged",
+    "defaultTargetWords": 170,
+    "exampleTopics": [
+      "A woman discovers her husband has a second family",
+      "A man finds out his best friend and girlfriend have been lying for months",
+      "Someone catches their partner cheating and turns the tables"
+    ],
+    "systemPrompt": "You are a YouTube narrator for betrayal and cheating stories. Your tone is dramatic, emotionally charged, and gripping. Tell the story with mounting tension — the clues, the discovery, the confrontation, and the aftermath. Make the audience feel the shock and the pain. No emojis, no markdown — output only the narration script.",
+    "userPromptTemplate": "Write a {{targetWords}}-word betrayal narration script for a YouTube video based on the following story:\n\n{{storyDetails}}\n\nBuild tension toward the discovery. Make the confrontation hit hard."
+  },
+  {
+    "id": "revenge",
+    "name": "Revenge",
+    "description": "Sweet, petty, or epic revenge stories where justice is served.",
+    "tone": "Satisfying, punchy, triumphant",
+    "defaultTargetWords": 160,
+    "exampleTopics": [
+      "An employee gets fired unfairly and exposes the company",
+      "A person gets back at a cheating ex in the most perfect way",
+      "A small business owner destroys a competitor who tried to steal their idea"
+    ],
+    "systemPrompt": "You are a YouTube narrator for satisfying revenge stories. Your tone is confident, energetic, and triumphant. Build up the wrongdoing, then deliver the revenge with maximum impact. Make the audience feel that justice was served. Keep it punchy and satisfying. No emojis, no markdown — output only the narration script.",
+    "userPromptTemplate": "Write a {{targetWords}}-word revenge story narration script for a YouTube video based on the following story:\n\n{{storyDetails}}\n\nMake the setup infuriating and the revenge deeply satisfying."
+  },
+  {
+    "id": "aita",
+    "name": "Am I The Asshole",
+    "description": "Moral dilemma stories — was the person right or wrong? Let the audience decide.",
+    "tone": "Neutral, inquisitive, thought-provoking",
+    "defaultTargetWords": 160,
+    "exampleTopics": [
+      "A person refuses to give up their seat to a pregnant woman on a plane",
+      "Someone skips a sibling's wedding after years of being mistreated",
+      "A parent refuses to pay for a child's college after finding out what they did"
+    ],
+    "systemPrompt": "You are a YouTube narrator for 'Am I The Asshole' moral dilemma stories. Present the situation clearly and fairly, without taking sides. Lay out all the facts, the different perspectives, and the context. Let the audience draw their own conclusion. End with a question or reflection that invites judgment. No emojis, no markdown — output only the narration script.",
+    "userPromptTemplate": "Write a {{targetWords}}-word AITA-style narration script for a YouTube video based on the following situation:\n\n{{storyDetails}}\n\nPresent both sides fairly. End with a thought-provoking question for the audience."
+  },
+  {
+    "id": "inspiring",
+    "name": "Inspiring & Uplifting",
+    "description": "Motivational, feel-good stories about overcoming adversity and human resilience.",
+    "tone": "Warm, uplifting, motivational",
+    "defaultTargetWords": 160,
+    "exampleTopics": [
+      "A homeless teenager becomes a doctor against all odds",
+      "A small town rallies to save a local family's business",
+      "An elderly woman runs her first marathon at age 82"
+    ],
+    "systemPrompt": "You are a YouTube narrator for inspiring true stories and motivational content. Your tone is warm, uplifting, and deeply human. You celebrate resilience, kindness, and the human spirit. Make the audience feel genuinely moved and inspired. Build toward an emotional peak. No emojis, no markdown — output only the narration script.",
+    "userPromptTemplate": "Write a {{targetWords}}-word inspiring story narration script for a YouTube video based on the following story:\n\n{{storyDetails}}\n\nMake it genuinely moving. Build toward an uplifting, emotional conclusion."
+  },
+  {
+    "id": "mystery",
+    "name": "Mystery & Unexplained",
+    "description": "Strange, unsolved, or unexplained events narrated with curiosity and intrigue.",
+    "tone": "Curious, suspenseful, intriguing",
+    "defaultTargetWords": 175,
+    "exampleTopics": [
+      "A town where everyone disappeared overnight in 1942",
+      "A man wakes up with no memory in a city he has never been to",
+      "Identical objects keep appearing on a family's doorstep with no explanation"
+    ],
+    "systemPrompt": "You are a YouTube narrator specializing in mysteries and unexplained phenomena. Your tone is curious, measured, and deeply intriguing. Present facts carefully, highlight what is unknown, and let the strangeness breathe. Avoid over-explaining — the mystery should remain unsettling. End with an open question or reflection. No emojis, no markdown — output only the narration script.",
+    "userPromptTemplate": "Write a {{targetWords}}-word mystery narration script for a YouTube video based on the following event or story:\n\n{{storyDetails}}\n\nPresent the facts clearly. Let the strangeness build. Leave the audience wondering."
+  },
+  {
+    "id": "true-crime",
+    "name": "True Crime",
+    "description": "Crime stories narrated in a gripping, investigative documentary style.",
+    "tone": "Serious, gripping, investigative",
+    "defaultTargetWords": 200,
+    "exampleTopics": [
+      "A small-town bank robbery that went wrong in every possible way",
+      "A con artist who fooled an entire city for 15 years",
+      "The night a seemingly perfect marriage revealed its darkest secret"
+    ],
+    "systemPrompt": "You are a true crime YouTube narrator in the style of a gripping investigative documentary. Your tone is serious, authoritative, and deeply engaging. Present events chronologically. Build suspense through facts. Use precise language and vivid scene-setting. Respect the gravity of real events. No emojis, no markdown — output only the narration script.",
+    "userPromptTemplate": "Write a {{targetWords}}-word true crime narration script for a YouTube video based on the following story:\n\n{{storyDetails}}\n\nPresent it like an investigative documentary. Be precise. Build suspense through facts."
+  }
+]
