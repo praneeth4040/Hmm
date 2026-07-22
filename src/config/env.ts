@@ -21,6 +21,7 @@ const envSchema = z.object({
 
   // OpenRouter LLM API
   OPENROUTER_API_KEY: z.string().min(1, { message: 'OPENROUTER_API_KEY is required' }),
+  OPENROUTER_DEFAULT_MODEL: z.string().default('google/gemini-flash-1.5'),
 });
 
 const parsed = envSchema.safeParse(process.env);
