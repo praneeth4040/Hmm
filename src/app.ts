@@ -12,6 +12,7 @@ import redditRoutes from './features/reddit/reddit.routes.js';
 import narrationRoutes from './features/narration/narration.routes.js';
 import captionsRoutes from './features/captions/captions.routes.js';
 import cardRoutes from "./features/card/card.routes.js";
+import ttsRoutes from './features/tts/tts.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { NotFoundError } from './utils/custom-errors.js';
 
@@ -48,6 +49,7 @@ app.use('/api/v1/reddit', redditRoutes);
 app.use('/api/v1/narration', narrationRoutes);
 app.use('/api/v1/captions', captionsRoutes);
 app.use('/api/v1/card', cardRoutes);
+app.use('/api/v1/tts', ttsRoutes);
 
 // Catch-all for undefined routes
 app.use('*', (req, _res, next) => {
