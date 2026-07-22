@@ -1,10 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts, Outfit_400Regular, Outfit_600SemiBold, Outfit_700Bold, Inter_500Medium } from '@expo-google-fonts/outfit';
-import * as Font from 'expo-font';
-import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { LogIn } from 'lucide-react-native';
 
 interface LoginScreenProps {
@@ -12,19 +10,6 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
-  const [fontsLoaded] = useFonts({
-    Outfit_400Regular,
-    Outfit_600SemiBold,
-    Outfit_700Bold,
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-  });
-
-  if (!fontsLoaded) {
-    return null;
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
