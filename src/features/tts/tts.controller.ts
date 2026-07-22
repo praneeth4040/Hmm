@@ -8,8 +8,8 @@ export const generateTTS = async (
   next: NextFunction,
 ) => {
   try {
-    const { text, voiceId, rate } = req.body as GenerateTTSRequest;
-    const audioBuffer = await ttsService.generateTTS(text, voiceId, rate);
+    const { text, voice, rate } = req.body as GenerateTTSRequest;
+    const audioBuffer = await ttsService.generateTTS(text, voice, rate);
     
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Content-Disposition', 'attachment; filename="tts_output.mp3"');
@@ -19,7 +19,11 @@ export const generateTTS = async (
   }
 };
 
-export const listVoices = (req: Request, res: Response) => {
-  const voices = ttsService.listVoices();
-  res.json({ voices });
+export const listVoices = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const voices = await ttsService.listVoices();
+    res.json({ voices });
+  } catch (err) {
+    next(err);
+  }
 };
