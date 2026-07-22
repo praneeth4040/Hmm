@@ -1,10 +1,10 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
 }
 
 model User {
@@ -12,7 +12,7 @@ model User {
   email     String    @unique
   name      String?
   createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt      @map("updated_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
   accounts  Account[]
   videos    Video[]
 
@@ -30,49 +30,35 @@ model Account {
   expiresAt         DateTime? @map("expires_at")
   scope             String?
   createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt      @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
 }
 
-// ── Video processing pipeline ────────────────────────────────────────────────
+model Video {
+  id            String      @id @default(cuid())
+  userId        String      @map("user_id")
+  redditUrl     String      @map("reddit_url")
+  redditPostId  String      @map("reddit_post_id")
+  redditTitle   String?     @map("reddit_title")
+  redditAuthor  String?     @map("reddit_author")
+  subreddit     String?
+  hfBucketUri   String?     @map("hf_bucket_uri")
+  fileSizeBytes BigInt?     @map("file_size_bytes")
+  status        VideoStatus @default(PENDING)
+  errorMessage  String?     @map("error_message")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("videos")
+}
 
 enum VideoStatus {
   PENDING
   PROCESSING
   READY
   FAILED
-}
-
-model Video {
-  id           String      @id @default(cuid())
-  userId       String      @map("user_id")
-
-  // Reddit source metadata
-  redditUrl    String      @map("reddit_url")
-  redditPostId String      @map("reddit_post_id")
-  redditTitle  String?     @map("reddit_title")
-  redditAuthor String?     @map("reddit_author")
-  subreddit    String?
-
-  // Hugging Face Bucket storage
-  // Canonical URI: hf://buckets/<namespace>/<bucket>/<key>
-  hfBucketUri  String?     @map("hf_bucket_uri")
-
-  // Video metadata (populated after download)
-  fileSizeBytes BigInt?    @map("file_size_bytes")
-
-  // Processing lifecycle
-  status       VideoStatus @default(PENDING)
-  errorMessage String?     @map("error_message")
-
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt      @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("videos")
 }
