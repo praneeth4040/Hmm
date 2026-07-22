@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from './src/screens/LoginScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import {
   Outfit_300Light,
@@ -42,17 +43,19 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isLoggedIn ? (
-        <Stack.Screen name="Login">
-          {() => <LoginScreen onLogin={() => setIsLoggedIn(true)} />}
-        </Stack.Screen>
-      ) : (
-        <Stack.Screen name="Dashboard" component={DashboardScreen} />
-      )}
-      </Stack.Navigator>
-      <StatusBar style="dark" />
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {!isLoggedIn ? (
+          <Stack.Screen name="Login">
+            {() => <LoginScreen onLogin={() => setIsLoggedIn(true)} />}
+          </Stack.Screen>
+        ) : (
+          <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        )}
+        </Stack.Navigator>
+        <StatusBar style="dark" />
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

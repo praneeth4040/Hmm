@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '../constants/theme';
 import { demoBrandChannels, demoVideos, demoUser, BrandChannel, Video } from '../constants/demoData';
 import { Link, Upload, TrendingUp, Users, CalendarCheck, Clock, UserCircle } from 'lucide-react-native';
