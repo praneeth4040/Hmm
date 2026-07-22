@@ -40,11 +40,12 @@ model Account {
 model Video {
   id            String      @id @default(cuid())
   userId        String      @map("user_id")
-  redditUrl     String      @map("reddit_url")
-  redditPostId  String      @map("reddit_post_id")
-  redditTitle   String?     @map("reddit_title")
-  redditAuthor  String?     @map("reddit_author")
-  subreddit     String?
+  source        VideoSource @default(REDDIT) // Can be REDDIT or YOUTUBE
+  url           String      // Original URL (Reddit or YouTube)
+  postId        String      @map("post_id") // Reddit post ID or YouTube video ID
+  title         String?
+  author        String?
+  subreddit     String?     // Only for Reddit
   hfBucketUri   String?     @map("hf_bucket_uri")
   fileSizeBytes BigInt?     @map("file_size_bytes")
   status        VideoStatus @default(PENDING)
@@ -54,6 +55,11 @@ model Video {
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("videos")
+}
+
+enum VideoSource {
+  REDDIT
+  YOUTUBE
 }
 
 enum VideoStatus {
