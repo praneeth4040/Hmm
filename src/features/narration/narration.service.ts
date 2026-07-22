@@ -12,8 +12,7 @@ const categories: NarrationCategory[] = JSON.parse(readFileSync(categoriesPath, 
 // OpenRouter API base URL (OpenAI-compatible)
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
-// Default model used when none specified
-const DEFAULT_MODEL = 'google/gemini-flash-1.5';
+
 
 export interface NarrationCategory {
   id: string;
@@ -87,7 +86,7 @@ export class NarrationService {
    * Generate a narration script using the category's prompt template + user story details.
    */
   async generateNarration(request: GenerateNarrationRequest): Promise<NarrationResult> {
-    const { categoryId, storyDetails, model = DEFAULT_MODEL } = request;
+    const { categoryId, storyDetails, model = env.OPENROUTER_DEFAULT_MODEL } = request;
 
     // Load and validate category
     const category = this.getCategoryById(categoryId);
