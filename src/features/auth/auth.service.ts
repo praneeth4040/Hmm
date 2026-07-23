@@ -13,12 +13,18 @@ export class AuthService {
     );
   }
 
-  getAuthUrl(userId?: string) {
+  getAuthUrl(userId?: string, redirectUri?: string) {
     const oauth2Client = this.getOAuth2Client();
+
+    // Encode both userId and redirectUri into the OAuth state param
+    const statePayload = Buffer.from(
+      JSON.stringify({ userId, redirectUri })
+    ).toString('base64');
+
     return oauth2Client.generateAuthUrl({
       access_type: 'offline',
       prompt: 'consent',
-      state: userId || undefined,
+      state: statePayload,
       scope: [
         // ── Identity ────────────────────────────────────────────────────────
         // Fetch the user's email and basic profile on login.
@@ -62,7 +68,18 @@ export class AuthService {
 
   async handleGoogleCallback(code: string, state?: string) {
     const oauth2Client = this.getOAuth2Client();
-    
+
+    // Decode state — may be a base64 JSON payload or a legacy plain userId
+    let userId: string | undefined;
+    if (state) {
+      try {
+        const parsed = JSON.parse(Buffer.from(state, 'base64').toString());
+        userId = parsed.userId;
+      } catch {
+        userId = state; // legacy plain userId string
+      }
+    }
+
     try {
       const { tokens } = await oauth2Client.getToken(code);
       oauth2Client.setCredentials(tokens);
@@ -82,9 +99,9 @@ export class AuthService {
       let user;
 
       // Case 1: Linking a Brand Channel or Account to an active user session
-      if (state) {
+      if (userId) {
         const existingUser = await prisma.user.findUnique({
-          where: { id: state },
+          where: { id: userId },
         });
 
         if (!existingUser) {
@@ -93,8 +110,7 @@ export class AuthService {
 
         user = existingUser;
       } else {
-        // Case 2: Fresh Login/Registration
-        // Block brand accounts from starting fresh signups
+        // Case 2: Fresh Login/Registration        // Block brand accounts from starting fresh signups
         if (profile.email.endsWith('@pages.plusgoogle.com')) {
           throw new BadRequestError(
             'Cannot authenticate directly using a YouTube Brand Account. Please sign in with your primary Google Account first, then connect your YouTube channel.'
