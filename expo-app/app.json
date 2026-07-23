@@ -10,6 +10,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.praneeth4400.expoapp",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -22,7 +23,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
-    ]
+      "expo-font",
+      "expo-secure-store"
+    ],
+    "scheme": "expoapp",
+    "extra": {
+      "eas": {
+        "projectId": "3d548fcf-93b2-4e3b-8984-07a82fc9ccf1"
+      }
+    }
   }
 }
