@@ -5,6 +5,8 @@ import { uploadVideoSchema } from './youtube.schema.js';
 import {
   getChannels,
   getChannelStats,
+  getChannelById,
+  getChannelVideos,
   uploadVideo,
 } from './youtube.controller.js';
 
@@ -32,6 +34,41 @@ const router = Router();
  *     responses:
  *       200:
  *         description: List of YouTube channels
+ * /api/v1/youtube/channels/{channelId}:
+ *   get:
+ *     summary: Get a single YouTube channel by ID
+ *     tags: [YouTube]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: channelId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Channel details
+ * /api/v1/youtube/channels/{channelId}/videos:
+ *   get:
+ *     summary: Get videos for a specific YouTube channel
+ *     tags: [YouTube]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: channelId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: maxResults
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: List of channel videos with statistics
  * /api/v1/youtube/stats:
  *   get:
  *     summary: Get user's YouTube channel stats
@@ -71,6 +108,8 @@ const router = Router();
 router.use(authMiddleware as any);
 
 router.get('/channels', getChannels);
+router.get('/channels/:channelId', getChannelById);
+router.get('/channels/:channelId/videos', getChannelVideos);
 router.get('/stats', getChannelStats);
 router.post('/upload', validate(uploadVideoSchema), uploadVideo);
 

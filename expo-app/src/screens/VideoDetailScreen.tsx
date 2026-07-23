@@ -6,37 +6,43 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Theme } from '../constants/theme';
-import { demoBrandChannels, demoVideos, Video } from '../constants/demoData';
 import { RootStackParamList } from '../navigation/types';
+import { useChannelVideos, parseDuration } from '../hooks/useChannelVideos';
 import {
   ArrowLeft,
-  DollarSign,
-  Cpu,
-  Mic,
-  HardDrive,
-  Timer,
   Eye,
   ThumbsUp,
   MessageSquare,
-  ExternalLink,
-  CheckCircle2,
-  Clock,
-  Loader,
-  MonitorPlay,
-  Hash,
   CalendarClock,
   Play,
+  AlertCircle,
 } from 'lucide-react-native';
 
 type Route = RouteProp<RootStackParamList, 'VideoDetail'>;
 type Nav   = NativeStackNavigationProp<RootStackParamList, 'VideoDetail'>;
 
-// ─── Stat row item ────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtCount(n?: string): string {
+  if (!n) return '—';
+  const num = parseInt(n, 10);
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+  return String(num);
+}
+
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+// ─── Stat row ─────────────────────────────────────────────────────────────────
 
 function StatRow({
   icon,
@@ -65,7 +71,7 @@ const sr = StyleSheet.create({
   value: { fontSize: 14, fontFamily: Theme.fonts.outfit.semibold },
 });
 
-// ─── Section card ─────────────────────────────────────────────────────────────
+// ─── Card ─────────────────────────────────────────────────────────────────────
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -91,30 +97,8 @@ const card = StyleSheet.create({
     borderWidth: 1,
     borderColor: Theme.colors.border,
   },
-  title: { fontSize: 14, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.textSecondary, marginBottom: 10 },
+  title: { fontSize: 13, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.textSecondary, marginBottom: 10, letterSpacing: 0.5 },
   divider: { height: 1, backgroundColor: '#F0F0F0', marginBottom: 4 },
-});
-
-// ─── Status badge ─────────────────────────────────────────────────────────────
-
-function StatusBadge({ status }: { status: Video['status'] }) {
-  const map = {
-    uploaded:   { label: 'Live',       color: Theme.colors.success, bg: '#E6F4EA', Icon: CheckCircle2  },
-    upcoming:   { label: 'Scheduled',  color: Theme.colors.accent,  bg: '#E8F0FE', Icon: CalendarClock },
-    processing: { label: 'Processing', color: '#E37400',            bg: '#FEF3E2', Icon: Loader        },
-  };
-  const { label, color, bg, Icon } = map[status];
-  return (
-    <View style={[sb.wrap, { backgroundColor: bg }]}>
-      <Icon size={13} color={color} />
-      <Text style={[sb.text, { color }]}>{label}</Text>
-    </View>
-  );
-}
-
-const sb = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, alignSelf: 'flex-start' },
-  text: { fontSize: 12, fontFamily: Theme.fonts.outfit.semibold },
 });
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -123,15 +107,14 @@ export default function VideoDetailScreen() {
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Route>();
 
-  const video   = demoVideos.find(v => v.id === params.videoId);
-  if (!video) return null;
-
-  const channel = demoBrandChannels.find(c => c.id === video.brandChannelId);
-  const { stats } = video;
-
-  // Format big token numbers nicely
-  const fmtNum = (n: number) =>
-    n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
+  // Load the channel's videos so we can look up this specific one by ID.
+  // channelId may be undefined if navigated to from outside ChannelDashboard.
+  const { videos, loading, error } = useChannelVideos(params.channelId ?? '');
+  const video = videos.find(v => v.id === params.videoId);
+  const duration = parseDuration(video?.duration);
+  const thumb =
+    video?.thumbnail ||
+    `https://img.youtube.com/vi/${params.videoId}/mqdefault.jpg`;
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
@@ -145,111 +128,70 @@ export default function VideoDetailScreen() {
         <View style={{ width: 38 }} />
       </View>
 
-      <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
-
-        {/* Hero thumbnail */}
-        <View style={s.heroWrap}>
-          <Image source={{ uri: video.thumbnail }} style={s.hero} />
-          <View style={s.heroPlayBtn}>
-            <Play size={28} color="#fff" fill="#fff" />
-          </View>
-          {video.duration && <Text style={s.heroDur}>{video.duration}</Text>}
+      {loading ? (
+        <ActivityIndicator color={Theme.colors.accent} style={{ marginTop: 64 }} />
+      ) : error || !video ? (
+        <View style={s.errorWrap}>
+          <AlertCircle size={32} color={Theme.colors.danger} />
+          <Text style={s.errorTxt}>{error ?? 'Video not found'}</Text>
+          <TouchableOpacity style={s.errorBtn} onPress={() => navigation.goBack()}>
+            <Text style={s.errorBtnTxt}>Go back</Text>
+          </TouchableOpacity>
         </View>
+      ) : (
+        <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* Title & status */}
-        <View style={s.titleBlock}>
-          <Text style={s.title}>{video.title}</Text>
-          <View style={s.titleMeta}>
-            <StatusBadge status={video.status} />
-            {channel && (
-              <View style={s.channelPill}>
-                <Image source={{ uri: channel.avatar }} style={s.channelAvatar} />
-                <Text style={s.channelName}>{channel.name}</Text>
-              </View>
-            )}
+          {/* Hero thumbnail */}
+          <View style={s.heroWrap}>
+            <Image source={{ uri: thumb }} style={s.hero} />
+            <View style={s.heroPlayBtn}>
+              <Play size={28} color="#fff" fill="#fff" />
+            </View>
+            {duration ? <Text style={s.heroDur}>{duration}</Text> : null}
           </View>
-        </View>
 
-        {/* Performance (uploaded only) */}
-        {video.status === 'uploaded' && (
+          {/* Title & date */}
+          <View style={s.titleBlock}>
+            <Text style={s.title}>{video.title}</Text>
+            <View style={s.titleMeta}>
+              <CalendarClock size={13} color={Theme.colors.textSecondary} />
+              <Text style={s.dateTxt}>{fmtDate(video.publishedAt)}</Text>
+            </View>
+          </View>
+
+          {/* Performance */}
           <Card title="PERFORMANCE">
-            <StatRow icon={<Eye size={16} color={Theme.colors.accent} />}      label="Views"     value={video.views ?? '-'}    accent={Theme.colors.accent} />
+            <StatRow
+              icon={<Eye size={16} color={Theme.colors.accent} />}
+              label="Views"
+              value={fmtCount(video.statistics.viewCount)}
+              accent={Theme.colors.accent}
+            />
             <View style={s.rowDivider} />
-            <StatRow icon={<ThumbsUp size={16} color={Theme.colors.success} />} label="Likes"    value={video.likes ?? '-'}    accent={Theme.colors.success} />
+            <StatRow
+              icon={<ThumbsUp size={16} color={Theme.colors.success} />}
+              label="Likes"
+              value={fmtCount(video.statistics.likeCount)}
+              accent={Theme.colors.success}
+            />
             <View style={s.rowDivider} />
-            <StatRow icon={<MessageSquare size={16} color="#9C27B0" />}          label="Comments" value={video.comments ?? '-'} accent="#9C27B0" />
-            <View style={s.rowDivider} />
-            <StatRow icon={<CalendarClock size={16} color={Theme.colors.textSecondary} />} label="Uploaded" value={video.uploadDate} />
+            <StatRow
+              icon={<MessageSquare size={16} color="#9C27B0" />}
+              label="Comments"
+              value={fmtCount(video.statistics.commentCount)}
+              accent="#9C27B0"
+            />
           </Card>
-        )}
 
-        {/* Source */}
-        <Card title="SOURCE">
-          <StatRow
-            icon={video.sourceType === 'youtube'
-              ? <MonitorPlay size={16} color="#FF0000" />
-              : <Hash size={16} color="#FF4500" />}
-            label={video.sourceType === 'youtube' ? 'YouTube' : 'Reddit'}
-            value="View original →"
-            accent={video.sourceType === 'youtube' ? '#FF0000' : '#FF4500'}
-          />
-        </Card>
+          {/* Description */}
+          {video.description ? (
+            <Card title="DESCRIPTION">
+              <Text style={s.description} numberOfLines={6}>{video.description}</Text>
+            </Card>
+          ) : null}
 
-        {/* AI Production Cost */}
-        <Card title="AI PRODUCTION COST">
-          <StatRow
-            icon={<DollarSign size={16} color={Theme.colors.success} />}
-            label="Total cost"
-            value={stats.costUSD}
-            accent={Theme.colors.success}
-          />
-          <View style={s.rowDivider} />
-          <StatRow
-            icon={<Cpu size={16} color={Theme.colors.accent} />}
-            label="AI tokens used"
-            value={fmtNum(stats.aiTokensUsed)}
-            accent={Theme.colors.accent}
-          />
-          <View style={s.rowDivider} />
-          <StatRow
-            icon={<Mic size={16} color="#9C27B0" />}
-            label="TTS characters"
-            value={fmtNum(stats.ttsCharsUsed)}
-            accent="#9C27B0"
-          />
-          <View style={s.rowDivider} />
-          <StatRow
-            icon={<Timer size={16} color="#E37400" />}
-            label="Processing time"
-            value={`${stats.processingTimeSec}s`}
-            accent="#E37400"
-          />
-          <View style={s.rowDivider} />
-          <StatRow
-            icon={<HardDrive size={16} color={Theme.colors.textSecondary} />}
-            label="Storage used"
-            value={`${stats.storageGB} GB`}
-          />
-        </Card>
-
-        {/* Models used */}
-        <Card title="MODELS USED">
-          <StatRow
-            icon={<Cpu size={16} color={Theme.colors.accent} />}
-            label="Narration / Script"
-            value={stats.narrationModel.split('/')[1] ?? stats.narrationModel}
-            accent={Theme.colors.accent}
-          />
-          <View style={s.rowDivider} />
-          <StatRow
-            icon={<Mic size={16} color="#9C27B0" />}
-            label="Captions / ASR"
-            value={stats.captionModel}
-            accent="#9C27B0"
-          />
-        </Card>
-
-      </ScrollView>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -303,11 +245,16 @@ const s = StyleSheet.create({
   },
 
   titleBlock: { marginBottom: 16 },
-  title: { fontSize: 17, fontFamily: Theme.fonts.outfit.bold, color: Theme.colors.textPrimary, marginBottom: 10, lineHeight: 24 },
-  titleMeta: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
-  channelPill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F4F6FB', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  channelAvatar: { width: 20, height: 20, borderRadius: 10 },
-  channelName: { fontSize: 12, fontFamily: Theme.fonts.outfit.medium, color: Theme.colors.textSecondary },
+  title: { fontSize: 17, fontFamily: Theme.fonts.outfit.bold, color: Theme.colors.textPrimary, marginBottom: 8, lineHeight: 24 },
+  titleMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  dateTxt: { fontSize: 13, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
 
   rowDivider: { height: 1, backgroundColor: '#F4F4F4', marginVertical: 2 },
+
+  description: { fontSize: 13, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary, lineHeight: 20 },
+
+  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
+  errorTxt: { fontSize: 14, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary, textAlign: 'center' },
+  errorBtn: { backgroundColor: Theme.colors.accent, paddingHorizontal: 20, paddingVertical: 9, borderRadius: 20 },
+  errorBtnTxt: { fontSize: 13, fontFamily: Theme.fonts.outfit.semibold, color: '#fff' },
 });

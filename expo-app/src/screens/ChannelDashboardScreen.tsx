@@ -6,30 +6,45 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Theme } from '../constants/theme';
-import { demoBrandChannels, demoVideos, Video } from '../constants/demoData';
 import { RootStackParamList } from '../navigation/types';
+import { useYouTubeChannels, YouTubeChannel } from '../hooks/useYouTubeChannels';
+import { useChannelVideos, ChannelVideo, parseDuration } from '../hooks/useChannelVideos';
 import {
   ArrowLeft,
   Users,
   TrendingUp,
   Play,
-  Clock,
-  DollarSign,
   Eye,
   ChevronRight,
-  CheckCircle2,
-  Loader,
+  ThumbsUp,
+  MessageSquare,
   CalendarClock,
-  Timer,
+  AlertCircle,
 } from 'lucide-react-native';
 
 type Route = RouteProp<RootStackParamList, 'ChannelDashboard'>;
 type Nav   = NativeStackNavigationProp<RootStackParamList, 'ChannelDashboard'>;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtCount(n?: string): string {
+  if (!n) return '—';
+  const num = parseInt(n, 10);
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+  return String(num);
+}
+
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 // ─── Stat tile ────────────────────────────────────────────────────────────────
 
@@ -73,53 +88,37 @@ const tile = StyleSheet.create({
   label: { fontSize: 11, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
 });
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
-
-function StatusBadge({ status }: { status: Video['status'] }) {
-  const map = {
-    uploaded:   { label: 'Live',       color: Theme.colors.success, bg: '#E6F4EA', Icon: CheckCircle2 },
-    upcoming:   { label: 'Scheduled',  color: Theme.colors.accent,  bg: '#E8F0FE', Icon: CalendarClock },
-    processing: { label: 'Processing', color: '#E37400',            bg: '#FEF3E2', Icon: Loader       },
-  };
-  const { label, color, bg, Icon } = map[status];
-  return (
-    <View style={[sb.wrap, { backgroundColor: bg }]}>
-      <Icon size={11} color={color} />
-      <Text style={[sb.text, { color }]}>{label}</Text>
-    </View>
-  );
-}
-
-const sb = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
-  text: { fontSize: 11, fontFamily: Theme.fonts.outfit.semibold },
-});
-
 // ─── Video card ───────────────────────────────────────────────────────────────
 
-function VideoCard({ video, onPress }: { video: Video; onPress: () => void }) {
+function VideoCard({ video, onPress }: { video: ChannelVideo; onPress: () => void }) {
+  const duration = parseDuration(video.duration);
+  const thumb = video.thumbnail || `https://img.youtube.com/vi/${video.id}/mqdefault.jpg`;
+
   return (
     <TouchableOpacity style={vc.card} onPress={onPress} activeOpacity={0.8}>
       <View style={vc.thumbWrap}>
-        <Image source={{ uri: video.thumbnail }} style={vc.thumb} />
-        {video.duration && <Text style={vc.dur}>{video.duration}</Text>}
+        <Image source={{ uri: thumb }} style={vc.thumb} />
+        {duration ? <Text style={vc.dur}>{duration}</Text> : null}
       </View>
       <View style={vc.info}>
         <Text style={vc.title} numberOfLines={2}>{video.title}</Text>
-        <View style={vc.row}>
-          <StatusBadge status={video.status} />
-          {video.status === 'uploaded' && (
-            <View style={vc.views}>
-              <Eye size={11} color={Theme.colors.textSecondary} />
-              <Text style={vc.viewsTxt}>{video.views}</Text>
-            </View>
-          )}
+        <View style={vc.statsRow}>
+          <View style={vc.stat}>
+            <Eye size={11} color={Theme.colors.textSecondary} />
+            <Text style={vc.statTxt}>{fmtCount(video.statistics.viewCount)}</Text>
+          </View>
+          <View style={vc.stat}>
+            <ThumbsUp size={11} color={Theme.colors.textSecondary} />
+            <Text style={vc.statTxt}>{fmtCount(video.statistics.likeCount)}</Text>
+          </View>
+          <View style={vc.stat}>
+            <MessageSquare size={11} color={Theme.colors.textSecondary} />
+            <Text style={vc.statTxt}>{fmtCount(video.statistics.commentCount)}</Text>
+          </View>
         </View>
-        <View style={vc.costRow}>
-          <DollarSign size={11} color={Theme.colors.success} />
-          <Text style={vc.costTxt}>Cost: {video.stats.costUSD}</Text>
-          <Timer size={11} color={Theme.colors.textSecondary} style={{ marginLeft: 8 }} />
-          <Text style={vc.costTxt}>{video.stats.processingTimeSec}s</Text>
+        <View style={vc.dateRow}>
+          <CalendarClock size={11} color={Theme.colors.textSecondary} />
+          <Text style={vc.statTxt}>{fmtDate(video.publishedAt)}</Text>
         </View>
       </View>
       <ChevronRight size={16} color={Theme.colors.textSecondary} />
@@ -160,29 +159,52 @@ const vc = StyleSheet.create({
   },
   info: { flex: 1, gap: 5, paddingVertical: 10 },
   title: { fontSize: 13, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.textPrimary, lineHeight: 18 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  views: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  viewsTxt: { fontSize: 11, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
-  costRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  costTxt: { fontSize: 11, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
+  statsRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  stat: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  statTxt: { fontSize: 11, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
+});
+
+// ─── Error state ──────────────────────────────────────────────────────────────
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <View style={err.wrap}>
+      <AlertCircle size={28} color={Theme.colors.danger} />
+      <Text style={err.msg}>{message}</Text>
+      <TouchableOpacity style={err.btn} onPress={onRetry} activeOpacity={0.8}>
+        <Text style={err.btnTxt}>Try again</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const err = StyleSheet.create({
+  wrap: { alignItems: 'center', paddingVertical: 32, gap: 10 },
+  msg: { fontSize: 14, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary, textAlign: 'center' },
+  btn: { backgroundColor: Theme.colors.accent, paddingHorizontal: 20, paddingVertical: 9, borderRadius: 20 },
+  btnTxt: { fontSize: 13, fontFamily: Theme.fonts.outfit.semibold, color: '#fff' },
 });
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function ChannelDashboardScreen() {
   const navigation = useNavigation<Nav>();
-  const { params }  = useRoute<Route>();
+  const { params } = useRoute<Route>();
 
-  const channel = demoBrandChannels.find(c => c.id === params.channelId);
-  if (!channel) return null;
+  // Resolve channel info from the cached channels list
+  const { channels } = useYouTubeChannels();
+  const channel: YouTubeChannel | undefined = channels.find(c => c.id === params.channelId);
 
-  const channelVideos = demoVideos.filter(v => v.brandChannelId === channel.id);
-  const uploaded  = channelVideos.filter(v => v.status === 'uploaded');
-  const scheduled = channelVideos.filter(v => v.status !== 'uploaded');
+  const { videos, loading: videosLoading, error: videosError, refetch } = useChannelVideos(params.channelId);
 
-  const totalCost = channelVideos
-    .reduce((sum, v) => sum + parseFloat(v.stats.costUSD.replace('$', '')), 0)
-    .toFixed(2);
+  const avatarUrl = channel
+    ? channel.snippet.thumbnails.medium?.url ||
+      channel.snippet.thumbnails.default?.url ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.snippet.title)}&background=FF0000&color=fff`
+    : `https://ui-avatars.com/api/?name=Channel&background=FF0000&color=fff`;
+
+  const channelName = channel?.snippet.title ?? 'Channel';
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
@@ -193,9 +215,9 @@ export default function ChannelDashboardScreen() {
           <ArrowLeft size={20} color={Theme.colors.textPrimary} />
         </TouchableOpacity>
         <View style={s.headerCenter}>
-          <Image source={{ uri: channel.avatar }} style={s.headerAvatar} />
+          <Image source={{ uri: avatarUrl }} style={s.headerAvatar} />
           <View>
-            <Text style={s.headerName}>{channel.name}</Text>
+            <Text style={s.headerName} numberOfLines={1}>{channelName}</Text>
             <Text style={s.headerSub}>Channel Dashboard</Text>
           </View>
         </View>
@@ -204,66 +226,77 @@ export default function ChannelDashboardScreen() {
 
       <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* Stats grid */}
-        <View style={s.gridRow}>
-          <StatTile icon={<Users size={16} color={Theme.colors.accent} />}       label="Subscribers"   value={channel.subscribers}     accent={Theme.colors.accent} />
-          <StatTile icon={<TrendingUp size={16} color={Theme.colors.success} />}  label="Total Views"   value={channel.totalViews}      accent={Theme.colors.success} />
-        </View>
-        <View style={s.gridRow}>
-          <StatTile icon={<Clock size={16} color="#9C27B0" />}                    label="Watch Time"    value={channel.watchTimeHours}  accent="#9C27B0" />
-          <StatTile icon={<Timer size={16} color="#E37400" />}                    label="Avg Duration"  value={channel.avgViewDuration} accent="#E37400" />
-        </View>
-        <View style={s.gridRow}>
-          <StatTile icon={<DollarSign size={16} color={Theme.colors.success} />}  label="Est. Revenue"  value={channel.revenue}         accent={Theme.colors.success} />
-          <StatTile icon={<Play size={16} color={Theme.colors.accent} />}          label="Total Videos"  value={String(channelVideos.length)} accent={Theme.colors.accent} />
-        </View>
-
-        {/* Total AI cost for this channel */}
-        <View style={s.costBanner}>
-          <DollarSign size={18} color={Theme.colors.success} />
-          <View>
-            <Text style={s.costBannerLabel}>Total AI Production Cost</Text>
-            <Text style={s.costBannerValue}>${totalCost} across {channelVideos.length} videos</Text>
-          </View>
-        </View>
-
-        {/* Uploaded videos */}
-        {uploaded.length > 0 && (
-          <View style={s.section}>
-            <View style={s.sectionRow}>
-              <Text style={s.sectionTitle}>Live Videos</Text>
-              <Text style={s.sectionCount}>{uploaded.length}</Text>
+        {/* Stats grid — populated from channel statistics */}
+        {channel ? (
+          <>
+            <View style={s.gridRow}>
+              <StatTile
+                icon={<Users size={16} color={Theme.colors.accent} />}
+                label="Subscribers"
+                value={
+                  channel.statistics.hiddenSubscriberCount
+                    ? 'Hidden'
+                    : fmtCount(channel.statistics.subscriberCount)
+                }
+                accent={Theme.colors.accent}
+              />
+              <StatTile
+                icon={<TrendingUp size={16} color={Theme.colors.success} />}
+                label="Total Views"
+                value={fmtCount(channel.statistics.viewCount)}
+                accent={Theme.colors.success}
+              />
             </View>
+            <View style={[s.gridRow, { marginBottom: 24 }]}>
+              <StatTile
+                icon={<Play size={16} color="#9C27B0" />}
+                label="Total Videos"
+                value={fmtCount(channel.statistics.videoCount)}
+                accent="#9C27B0"
+              />
+              {channel.snippet.customUrl ? (
+                <View style={[tile.wrap, { borderTopColor: '#E37400', flex: 1 }]}>
+                  <View style={[tile.iconWrap, { backgroundColor: '#E3740018' }]}>
+                    <TrendingUp size={16} color="#E37400" />
+                  </View>
+                  <Text style={tile.value} numberOfLines={1}>{channel.snippet.customUrl}</Text>
+                  <Text style={tile.label}>Custom URL</Text>
+                </View>
+              ) : <View style={{ flex: 1 }} />}
+            </View>
+          </>
+        ) : null}
+
+        {/* Videos section */}
+        <View style={s.section}>
+          <View style={s.sectionRow}>
+            <Text style={s.sectionTitle}>Videos</Text>
+            {!videosLoading && !videosError && (
+              <Text style={s.sectionCount}>{videos.length} loaded</Text>
+            )}
+          </View>
+
+          {videosLoading ? (
+            <ActivityIndicator color={Theme.colors.accent} style={{ marginVertical: 32 }} />
+          ) : videosError ? (
+            <ErrorState message={videosError} onRetry={refetch} />
+          ) : videos.length === 0 ? (
+            <View style={s.emptyWrap}>
+              <Play size={28} color={Theme.colors.border} />
+              <Text style={s.emptyTxt}>No videos found for this channel</Text>
+            </View>
+          ) : (
             <View style={s.videoList}>
-              {uploaded.map(v => (
+              {videos.map(v => (
                 <VideoCard
                   key={v.id}
                   video={v}
-                  onPress={() => navigation.navigate('VideoDetail', { videoId: v.id })}
+                  onPress={() => navigation.navigate('VideoDetail', { videoId: v.id, channelId: params.channelId })}
                 />
               ))}
             </View>
-          </View>
-        )}
-
-        {/* Scheduled / processing */}
-        {scheduled.length > 0 && (
-          <View style={s.section}>
-            <View style={s.sectionRow}>
-              <Text style={s.sectionTitle}>Scheduled & Processing</Text>
-              <Text style={s.sectionCount}>{scheduled.length}</Text>
-            </View>
-            <View style={s.videoList}>
-              {scheduled.map(v => (
-                <VideoCard
-                  key={v.id}
-                  video={v}
-                  onPress={() => navigation.navigate('VideoDetail', { videoId: v.id })}
-                />
-              ))}
-            </View>
-          </View>
-        )}
+          )}
+        </View>
 
       </ScrollView>
     </SafeAreaView>
@@ -285,30 +318,19 @@ const s = StyleSheet.create({
     borderBottomColor: Theme.colors.border,
   },
   backBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#F4F6FB', justifyContent: 'center', alignItems: 'center' },
-  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center' },
   headerAvatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: Theme.colors.border },
-  headerName: { fontSize: 15, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.textPrimary },
+  headerName: { fontSize: 15, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.textPrimary, maxWidth: 160 },
   headerSub: { fontSize: 11, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
 
   gridRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-
-  costBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#E6F4EA',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#C8E6C9',
-  },
-  costBannerLabel: { fontSize: 12, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
-  costBannerValue: { fontSize: 15, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.textPrimary },
 
   section: { marginBottom: 24 },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 16, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.textPrimary },
   sectionCount: { fontSize: 12, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
   videoList: { gap: 10 },
+
+  emptyWrap: { alignItems: 'center', paddingVertical: 32, gap: 8 },
+  emptyTxt: { fontSize: 14, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
 });

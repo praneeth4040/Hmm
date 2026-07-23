@@ -2,5 +2,6 @@
 export type RootStackParamList = {
   Dashboard: undefined;
   ChannelDashboard: { channelId: string };
-  VideoDetail: { videoId: string };
+  /** videoId is the YouTube video ID; channelId is provided when navigating from ChannelDashboard */
+  VideoDetail: { videoId: string; channelId?: string };
 };
