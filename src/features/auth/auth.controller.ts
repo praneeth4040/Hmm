@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../../config/env.js';
 import { authService } from './auth.service.js';
+import { AuthenticatedRequest } from '../../middlewares/auth.middleware.js';
+import { prisma } from '../../config/database.js';
+import { NotFoundError } from '../../utils/custom-errors.js';
 
 export const redirectToGoogle = (req: Request, res: Response): void => {
   let userId: string | undefined;
@@ -74,3 +77,22 @@ export const handleGoogleCallback = async (
   }
 };
 
+
+export const getMe = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { id: true, email: true, name: true, avatarUrl: true, createdAt: true },
+    });
+
+    if (!user) throw new NotFoundError('User not found');
+
+    res.status(200).json({ status: 'success', data: { user } });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -11,6 +11,7 @@ model User {
   id        String    @id @default(uuid())
   email     String    @unique
   name      String?
+  avatarUrl String?   @map("avatar_url")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   accounts  Account[]
@@ -25,6 +26,7 @@ model Account {
   provider          String
   providerAccountId String    @map("provider_account_id")
   email             String
+  youtubeChannelId  String?   @map("youtube_channel_id")
   accessToken       String?   @map("access_token")
   refreshToken      String?   @map("refresh_token")
   expiresAt         DateTime? @map("expires_at")

@@ -37,6 +37,37 @@ export const getChannelStats = async (
   }
 };
 
+export const getChannelById = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { channelId } = req.params;
+    const channel = await youtubeService.getChannelById(userId, channelId);
+    res.status(200).json({ status: 'success', data: { channel } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getChannelVideos = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { channelId } = req.params;
+    const maxResults = req.query.maxResults ? parseInt(req.query.maxResults as string, 10) : 20;
+    const videos = await youtubeService.getChannelVideos(userId, channelId, maxResults);
+    res.status(200).json({ status: 'success', results: videos.length, data: { videos } });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const uploadVideo = async (
   req: AuthenticatedRequest,
   res: Response,

@@ -120,16 +120,31 @@ export class AuthService {
         // Upsert primary user
         user = await prisma.user.upsert({
           where: { email: profile.email },
-          update: { name: profile.name },
+          update: {
+            name: profile.name,
+            ...(profile.picture && { avatarUrl: profile.picture }),
+          },
           create: {
             email: profile.email,
             name: profile.name,
+            avatarUrl: profile.picture ?? null,
           },
         });
       }
 
       // Upsert the Account connection under the resolved user
       const expiresAt = tokens.expiry_date ? new Date(tokens.expiry_date) : null;
+
+      // Fetch the primary YouTube channel ID for this Google account so we can
+      // map accounts → channels later (needed for multi-account support).
+      let youtubeChannelId: string | null = null;
+      try {
+        const yt = google.youtube({ version: 'v3', auth: oauth2Client });
+        const ytRes = await yt.channels.list({ part: ['id'], mine: true, maxResults: 1 });
+        youtubeChannelId = ytRes.data.items?.[0]?.id ?? null;
+      } catch {
+        // Non-fatal — channel ID is a nice-to-have for the linking flow
+      }
 
       await prisma.account.upsert({
         where: {
@@ -144,6 +159,7 @@ export class AuthService {
           ...(tokens.refresh_token && { refreshToken: tokens.refresh_token }),
           expiresAt,
           scope: tokens.scope,
+          ...(youtubeChannelId && { youtubeChannelId }),
         },
         create: {
           userId: user.id,
@@ -154,6 +170,7 @@ export class AuthService {
           refreshToken: tokens.refresh_token,
           expiresAt,
           scope: tokens.scope,
+          youtubeChannelId,
         },
       });
 
