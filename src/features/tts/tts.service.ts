@@ -13,14 +13,18 @@ export class TTSService {
     return this.voicesManager;
   }
 
-  async generateTTS(text: string, voice: string, rate: number = 0): Promise<Buffer> {
+  async generateTTS(text: string, voice: string, rate: number = 1): Promise<Buffer> {
     try {
-      logger.info(`Generating TTS with voice: ${voice}, rate: ${rate}`);
+      logger.info(`Generating TTS with voice: ${voice}, rate: ${rate}x`);
 
-      const formattedRate = rate === 0 ? '+0%' : `${rate > 0 ? '+' : ''}${rate * 100}%`;
+      // Convert multiplier to edge-tts percentage offset: (rate - 1) * 100
+      // e.g. 1x → +0%, 1.25x → +25%, 0.75x → -25%
+      const pct = Math.round((rate - 1) * 100);
+      const formattedRate = pct === 0 ? '+0%' : `${pct > 0 ? '+' : ''}${pct}%`;
+
       const communicate = new Communicate(text, {
         voice,
-        rate: formattedRate, // Convert to percentage format (e.g., +10%, -5%, +0%)
+        rate: formattedRate,
       });
 
       const chunks: Buffer[] = [];

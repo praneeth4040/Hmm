@@ -27,6 +27,14 @@ model Account {
   providerAccountId String    @map("provider_account_id")
   email             String
   youtubeChannelId  String?   @map("youtube_channel_id")
+  /// Display name used as the persona username in Reddit / X card templates
+  cardUsername      String?   @map("card_username")
+  /// Avatar URL used as the persona avatar in Reddit / X card templates
+  cardAvatarUrl     String?   @map("card_avatar_url")
+  /// Narration content type ID (from categories.json) for this persona
+  contentTypeId     String?   @map("content_type_id")
+  /// Selected TTS voices with per-voice settings (JSON array of {voiceShortName, rate, pitch})
+  voices            Json?     @default("[]")
   accessToken       String?   @map("access_token")
   refreshToken      String?   @map("refresh_token")
   expiresAt         DateTime? @map("expires_at")

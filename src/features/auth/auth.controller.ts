@@ -4,7 +4,7 @@ import { env } from '../../config/env.js';
 import { authService } from './auth.service.js';
 import { AuthenticatedRequest } from '../../middlewares/auth.middleware.js';
 import { prisma } from '../../config/database.js';
-import { NotFoundError } from '../../utils/custom-errors.js';
+import { ForbiddenError, NotFoundError } from '../../utils/custom-errors.js';
 
 export const redirectToGoogle = (req: Request, res: Response): void => {
   let userId: string | undefined;
@@ -92,6 +92,91 @@ export const getMe = async (
     if (!user) throw new NotFoundError('User not found');
 
     res.status(200).json({ status: 'success', data: { user } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/v1/auth/accounts
+ * Returns all connected accounts for the current user,
+ * including card persona fields.
+ */
+export const getAccounts = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const accounts = await prisma.account.findMany({
+      where: { userId: req.user!.id },
+      select: {
+        id: true,
+        provider: true,
+        email: true,
+        youtubeChannelId: true,
+        cardUsername: true,
+        cardAvatarUrl: true,
+        contentTypeId: true,
+        voices: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    res.status(200).json({ status: 'success', results: accounts.length, data: { accounts } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PATCH /api/v1/auth/accounts/:accountId
+ * Update the card persona (cardUsername / cardAvatarUrl) on one of the
+ * current user's connected accounts. These values are used as the
+ * username and avatar in Reddit / X card templates.
+ */
+export const updateAccountPersona = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { accountId } = req.params;
+
+    // Ensure the account belongs to this user
+    const account = await prisma.account.findUnique({ where: { id: accountId } });
+    if (!account) throw new NotFoundError('Account not found');
+    if (account.userId !== req.user!.id) throw new ForbiddenError('Not your account');
+
+    const { cardUsername, cardAvatarUrl, contentTypeId, voices } = req.body as {
+      cardUsername?: string;
+      cardAvatarUrl?: string | null;
+      contentTypeId?: string | null;
+      voices?: Array<{ voiceShortName: string; rate: number; pitch: number }>;
+    };
+
+    const updated = await prisma.account.update({
+      where: { id: accountId },
+      data: {
+        ...(cardUsername !== undefined && { cardUsername }),
+        ...(cardAvatarUrl !== undefined && { cardAvatarUrl }),
+        ...(contentTypeId !== undefined && { contentTypeId }),
+        ...(voices !== undefined && { voices }),
+      },
+      select: {
+        id: true,
+        provider: true,
+        email: true,
+        youtubeChannelId: true,
+        cardUsername: true,
+        cardAvatarUrl: true,
+        contentTypeId: true,
+        voices: true,
+      },
+    });
+
+    res.status(200).json({ status: 'success', data: { account: updated } });
   } catch (error) {
     next(error);
   }

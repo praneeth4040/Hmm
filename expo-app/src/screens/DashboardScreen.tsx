@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { Theme } from '../constants/theme';
 import { RootStackParamList } from '../navigation/types';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useYouTubeChannels, YouTubeChannel } from '../hooks/useYouTubeChannels';
+import { useAccounts, ConnectedAccount } from '../hooks/useAccounts';
 import { useAuth } from '../contexts/AuthContext';
 import { API_BASE_URL } from '../api/client';
 import {
@@ -33,6 +34,8 @@ import {
   MonitorPlay,
   Hash,
   Tv2,
+  Pencil,
+  UserCircle2,
 } from 'lucide-react-native';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
@@ -47,82 +50,196 @@ function fmtCount(n?: string): string {
   return String(num);
 }
 
-// ─── Channel card ─────────────────────────────────────────────────────────────
+// ─── Merged account row ───────────────────────────────────────────────────────
+// Shows the persona avatar/username on the left, channel stats in the middle,
+// and an Edit Persona button on the right. Tapping the channel area navigates
+// to ChannelDashboard; tapping Edit goes to PersonaEditor.
 
-function ChannelCard({ channel, onPress }: { channel: YouTubeChannel; onPress: () => void }) {
-  const avatarUrl =
-    channel.snippet.thumbnails.medium?.url ||
-    channel.snippet.thumbnails.default?.url ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.snippet.title)}&background=FF0000&color=fff`;
+interface AccountRowProps {
+  account: ConnectedAccount;
+  channel: YouTubeChannel | undefined;
+  onChannelPress: () => void;
+  onEditPersona: () => void;
+}
+
+function AccountRow({ account, channel, onChannelPress, onEditPersona }: AccountRowProps) {
+  const personaInitial = (account.cardUsername ?? account.email)[0]?.toUpperCase() ?? '?';
+  const channelAvatarUrl =
+    channel?.snippet.thumbnails.medium?.url ||
+    channel?.snippet.thumbnails.default?.url ||
+    (channel
+      ? `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.snippet.title)}&background=FF0000&color=fff`
+      : null);
 
   return (
-    <TouchableOpacity style={ch.card} onPress={onPress} activeOpacity={0.8}>
-      <Image source={{ uri: avatarUrl }} style={ch.avatar} />
-      <View style={ch.info}>
-        <Text style={ch.name} numberOfLines={1}>{channel.snippet.title}</Text>
-        {channel.snippet.customUrl && (
-          <Text style={ch.handle} numberOfLines={1}>{channel.snippet.customUrl}</Text>
+    <View style={ar.card}>
+      {/* ── Persona pill ─────────────────────────────────────────────────── */}
+      <View style={ar.personaCol}>
+        {account.cardAvatarUrl ? (
+          <Image source={{ uri: account.cardAvatarUrl }} style={ar.personaAvatar} />
+        ) : (
+          <View style={ar.personaFallback}>
+            <Text style={ar.personaInitial}>{personaInitial}</Text>
+          </View>
         )}
-        <View style={ch.statsRow}>
-          <View style={ch.stat}>
-            <Users size={11} color={Theme.colors.textSecondary} />
-            <Text style={ch.statTxt}>
-              {channel.statistics.hiddenSubscriberCount
-                ? 'Hidden'
-                : fmtCount(channel.statistics.subscriberCount)}
-            </Text>
+        <Text style={ar.personaName} numberOfLines={1}>
+          {account.cardUsername ?? <Text style={ar.personaUnset}>No name</Text>}
+        </Text>
+        <TouchableOpacity style={ar.editBtn} onPress={onEditPersona} activeOpacity={0.75}>
+          <Pencil size={11} color={Theme.colors.accent} />
+          <Text style={ar.editTxt}>Edit</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Divider ───────────────────────────────────────────────────────── */}
+      <View style={ar.divider} />
+
+      {/* ── Channel area ─────────────────────────────────────────────────── */}
+      {channel ? (
+        <TouchableOpacity style={ar.channelCol} onPress={onChannelPress} activeOpacity={0.8}>
+          {channelAvatarUrl && (
+            <Image source={{ uri: channelAvatarUrl }} style={ar.channelAvatar} />
+          )}
+          <View style={ar.channelInfo}>
+            <Text style={ar.channelName} numberOfLines={1}>{channel.snippet.title}</Text>
+            {channel.snippet.customUrl && (
+              <Text style={ar.channelHandle} numberOfLines={1}>{channel.snippet.customUrl}</Text>
+            )}
+            <View style={ar.statsRow}>
+              <View style={ar.stat}>
+                <Users size={10} color={Theme.colors.textSecondary} />
+                <Text style={ar.statTxt}>
+                  {channel.statistics.hiddenSubscriberCount
+                    ? 'Hidden'
+                    : fmtCount(channel.statistics.subscriberCount)}
+                </Text>
+              </View>
+              <View style={ar.stat}>
+                <TrendingUp size={10} color={Theme.colors.textSecondary} />
+                <Text style={ar.statTxt}>{fmtCount(channel.statistics.viewCount)} views</Text>
+              </View>
+              <View style={ar.stat}>
+                <Play size={10} color={Theme.colors.textSecondary} />
+                <Text style={ar.statTxt}>{fmtCount(channel.statistics.videoCount)} videos</Text>
+              </View>
+            </View>
           </View>
-          <View style={ch.stat}>
-            <TrendingUp size={11} color={Theme.colors.textSecondary} />
-            <Text style={ch.statTxt}>{fmtCount(channel.statistics.viewCount)} views</Text>
+          <ChevronRight size={16} color={Theme.colors.textSecondary} />
+        </TouchableOpacity>
+      ) : (
+        <View style={ar.channelCol}>
+          <View style={ar.noChannelIconWrap}>
+            <Tv2 size={18} color={Theme.colors.textSecondary} />
           </View>
-          <View style={ch.stat}>
-            <Play size={11} color={Theme.colors.textSecondary} />
-            <Text style={ch.statTxt}>{fmtCount(channel.statistics.videoCount)} videos</Text>
+          <View style={ar.channelInfo}>
+            <Text style={ar.channelName}>{account.email}</Text>
+            <Text style={ar.noChannelTxt}>No channel linked</Text>
           </View>
         </View>
-      </View>
-      <ChevronRight size={18} color={Theme.colors.textSecondary} />
-    </TouchableOpacity>
+      )}
+    </View>
   );
 }
 
-const ch = StyleSheet.create({
+const ar = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 14,
-    gap: 12,
     borderWidth: 1,
     borderColor: Theme.colors.border,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
-  avatar: { width: 52, height: 52, borderRadius: 26, borderWidth: 1.5, borderColor: Theme.colors.border },
-  info: { flex: 1, gap: 3 },
-  name: { fontSize: 14, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.textPrimary },
-  handle: { fontSize: 12, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.accent },
-  statsRow: { flexDirection: 'row', gap: 10, marginTop: 2 },
+
+  // Persona side
+  personaCol: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    gap: 5,
+    minWidth: 80,
+  },
+  personaAvatar: { width: 40, height: 40, borderRadius: 20 },
+  personaFallback: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Theme.colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  personaInitial: { fontSize: 16, fontFamily: Theme.fonts.outfit.bold, color: '#fff' },
+  personaName: {
+    fontSize: 11,
+    fontFamily: Theme.fonts.outfit.semibold,
+    color: Theme.colors.textPrimary,
+    maxWidth: 72,
+    textAlign: 'center',
+  },
+  personaUnset: {
+    fontSize: 11,
+    fontFamily: Theme.fonts.outfit.regular,
+    color: Theme.colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#EBF3FD',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  editTxt: { fontSize: 11, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.accent },
+
+  // Divider
+  divider: { width: 1, alignSelf: 'stretch', backgroundColor: Theme.colors.border },
+
+  // Channel side
+  channelCol: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+  },
+  channelAvatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: Theme.colors.border },
+  noChannelIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F4F6FB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  channelInfo: { flex: 1, gap: 2 },
+  channelName: { fontSize: 13, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.textPrimary },
+  channelHandle: { fontSize: 11, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.accent },
+  noChannelTxt: { fontSize: 11, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary, fontStyle: 'italic' },
+  statsRow: { flexDirection: 'row', gap: 8, marginTop: 2, flexWrap: 'wrap' },
   stat: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  statTxt: { fontSize: 11, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
+  statTxt: { fontSize: 10, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
 });
 
-// ─── Empty channel state ──────────────────────────────────────────────────────
+// ─── Empty state ──────────────────────────────────────────────────────────────
 
-function EmptyChannels({ onConnect }: { onConnect: () => void }) {
+function EmptyAccounts({ onConnect }: { onConnect: () => void }) {
   return (
     <View style={empty.wrap}>
       <Tv2 size={36} color={Theme.colors.border} />
-      <Text style={empty.title}>No channels connected</Text>
-      <Text style={empty.sub}>Connect your YouTube account to see your channels here</Text>
+      <Text style={empty.title}>No accounts connected</Text>
+      <Text style={empty.sub}>Connect your Google / YouTube account to get started</Text>
       <TouchableOpacity style={empty.btn} onPress={onConnect} activeOpacity={0.8}>
         <PlusCircle size={15} color="#fff" />
-        <Text style={empty.btnTxt}>Connect YouTube</Text>
+        <Text style={empty.btnTxt}>Connect Account</Text>
       </TouchableOpacity>
     </View>
   );
@@ -146,12 +263,24 @@ export default function DashboardScreen() {
   const { user } = useCurrentUser();
   const { token } = useAuth();
   const { channels, loading: channelsLoading, refetch: refetchChannels } = useYouTubeChannels();
+  const { accounts, loading: accountsLoading, refetch: refetchAccounts } = useAccounts();
+
+  // Build a map of accountId → channel for O(1) lookup
+  const channelByAccountId = useMemo(() => {
+    const map = new Map<string, YouTubeChannel>();
+    for (const ch of channels) {
+      if (ch.accountId) map.set(ch.accountId, ch);
+    }
+    return map;
+  }, [channels]);
+
+  const isLoading = channelsLoading || accountsLoading;
 
   const firstName = user?.name?.split(' ')[0] ?? '...';
   const avatarUri = user?.avatarUrl
     ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name ?? 'U')}&background=1A73E8&color=fff`;
 
-  // ── Connect YouTube channel ──────────────────────────────────────────────
+  // ── Connect Google / YouTube account ────────────────────────────────────
   const handleConnect = async () => {
     if (!token) return;
     setConnecting(true);
@@ -165,9 +294,9 @@ export default function DashboardScreen() {
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
 
       if (result.type === 'success') {
-        await refetchChannels();
+        await Promise.all([refetchChannels(), refetchAccounts()]);
       } else if (result.type !== 'cancel') {
-        Alert.alert('Connection failed', 'Could not connect your YouTube account.');
+        Alert.alert('Connection failed', 'Could not connect your account.');
       }
     } catch {
       Alert.alert('Connection failed', 'Something went wrong. Please try again.');
@@ -210,7 +339,7 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* ── Video Extraction ─────────────────────────────────────────────── */}
+        {/* ── Video Extraction ──────────────────────────────────────────────── */}
         <View style={s.sectionWrap}>
           <Text style={s.sectionTitle}>Video Extraction</Text>
           <Text style={s.sectionSub}>Paste any Reddit or YouTube URL to get started</Text>
@@ -267,14 +396,16 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* ── Brand Channels ───────────────────────────────────────────────── */}
+        {/* ── Connected Accounts (channel + persona merged) ─────────────────── */}
         <View style={s.sectionWrap}>
           <View style={s.sectionRow}>
             <View>
-              <Text style={s.sectionTitle}>Brand Channels</Text>
-              {!channelsLoading && (
+              <Text style={s.sectionTitle}>Connected Accounts</Text>
+              {!isLoading && (
                 <Text style={s.sectionSub}>
-                  {channels.length > 0 ? `${channels.length} connected` : 'None connected'}
+                  {accounts.length > 0
+                    ? `${accounts.length} account${accounts.length !== 1 ? 's' : ''} · tap channel to explore`
+                    : 'None connected'}
                 </Text>
               )}
             </View>
@@ -292,17 +423,32 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          {channelsLoading ? (
+          {/* Column headers — only shown when there are accounts */}
+          {!isLoading && accounts.length > 0 && (
+            <View style={s.colHeaders}>
+              <Text style={s.colHeaderPersona}>Persona</Text>
+              <Text style={s.colHeaderChannel}>Channel</Text>
+            </View>
+          )}
+
+          {isLoading ? (
             <ActivityIndicator color={Theme.colors.accent} style={{ marginVertical: 24 }} />
-          ) : channels.length === 0 ? (
-            <EmptyChannels onConnect={handleConnect} />
+          ) : accounts.length === 0 ? (
+            <EmptyAccounts onConnect={handleConnect} />
           ) : (
-            <View style={s.channelList}>
-              {channels.map(channel => (
-                <ChannelCard
-                  key={channel.id}
-                  channel={channel}
-                  onPress={() => navigation.navigate('ChannelDashboard', { channelId: channel.id })}
+            <View style={s.accountList}>
+              {accounts.map((account) => (
+                <AccountRow
+                  key={account.id}
+                  account={account}
+                  channel={channelByAccountId.get(account.id)}
+                  onChannelPress={() => {
+                    const ch = channelByAccountId.get(account.id);
+                    if (ch) navigation.navigate('ChannelDashboard', { channelId: ch.id });
+                  }}
+                  onEditPersona={() =>
+                    navigation.navigate('PersonaEditor', { accountId: account.id })
+                  }
                 />
               ))}
             </View>
@@ -338,9 +484,36 @@ const s = StyleSheet.create({
   avatar: { width: 38, height: 38, borderRadius: 19, borderWidth: 2, borderColor: Theme.colors.accent },
 
   sectionWrap: { marginTop: 28, paddingHorizontal: 20 },
-  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   sectionTitle: { fontSize: 17, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.textPrimary },
   sectionSub: { fontSize: 12, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary, marginTop: 2 },
+
+  // Column headers
+  colHeaders: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
+  colHeaderPersona: {
+    width: 80,
+    textAlign: 'center',
+    fontSize: 11,
+    fontFamily: Theme.fonts.outfit.semibold,
+    color: Theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  colHeaderChannel: {
+    flex: 1,
+    marginLeft: 15,
+    fontSize: 11,
+    fontFamily: Theme.fonts.outfit.semibold,
+    color: Theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  accountList: { gap: 10 },
 
   extractCard: {
     backgroundColor: '#fff',
@@ -394,6 +567,4 @@ const s = StyleSheet.create({
   },
   connectBtnDisabled: { opacity: 0.6 },
   connectTxt: { fontSize: 13, fontFamily: Theme.fonts.outfit.semibold, color: Theme.colors.accent },
-
-  channelList: { gap: 10 },
 });

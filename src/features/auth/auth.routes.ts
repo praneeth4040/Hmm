@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import { validate } from '../../middlewares/validation.middleware.js';
-import { googleCallbackSchema } from './auth.schema.js';
-import { redirectToGoogle, handleGoogleCallback, getMe } from './auth.controller.js';
+import { googleCallbackSchema, updateAccountPersonaSchema } from './auth.schema.js';
+import {
+  redirectToGoogle,
+  handleGoogleCallback,
+  getMe,
+  getAccounts,
+  updateAccountPersona,
+} from './auth.controller.js';
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
 
 const router = Router();
@@ -43,5 +49,56 @@ router.get('/google/callback', validate(googleCallbackSchema), handleGoogleCallb
  *         description: Current user profile
  */
 router.get('/me', authMiddleware as any, getMe);
+
+/**
+ * @swagger
+ * /api/v1/auth/accounts:
+ *   get:
+ *     summary: List all connected accounts with card persona fields
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of connected accounts
+ *
+ * /api/v1/auth/accounts/{accountId}:
+ *   patch:
+ *     summary: Update card persona (username + avatar) for a connected account
+ *     description: >
+ *       The cardUsername and cardAvatarUrl fields are injected into Reddit
+ *       and X card templates when generating PNG cards.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               cardUsername:
+ *                 type: string
+ *               cardAvatarUrl:
+ *                 type: string
+ *                 nullable: true
+ *     responses:
+ *       200:
+ *         description: Updated account
+ */
+router.get('/accounts', authMiddleware as any, getAccounts);
+router.patch(
+  '/accounts/:accountId',
+  authMiddleware as any,
+  validate(updateAccountPersonaSchema),
+  updateAccountPersona
+);
 
 export default router;
