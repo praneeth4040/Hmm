@@ -37,4 +37,18 @@ export async function apiPatch<T>(path: string, body: unknown, token?: string): 
   return res.json() as Promise<T>;
 }
 
+export async function apiDelete<T = void>(path: string, token?: string): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  // DELETE may return 204 with no body
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
+}
+
 export { API_BASE_URL };

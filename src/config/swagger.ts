@@ -7,7 +7,7 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: 'Hmm API',
       version: '1.0.0',
-      description: 'API documentation for Hmm - Reddit video downloader, YouTube uploader, and narration generator',
+      description: 'API documentation for Hmm - Video downloader (Reddit & YouTube), uploader, and narration generator',
     },
     servers: [
       {

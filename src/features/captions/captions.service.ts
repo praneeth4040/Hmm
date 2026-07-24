@@ -199,7 +199,7 @@ export class CaptionsService {
   async downloadVideoWithCaptions(videoId: string, userId: string, captions: CaptionSegment[], style?: CaptionStyle): Promise<string> {
     const presignedUrl = await this.getPresignedDownloadUrl(videoId, userId);
 
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "reddit-video-captions-"));
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "video-captions-"));
     const originalVideoPath = path.join(tempDir, `${videoId}_original.mp4`);
     const srtPath = path.join(tempDir, `${videoId}_captions.srt`);
     const captionedVideoPath = path.join(tempDir, `${videoId}_captioned.mp4`);

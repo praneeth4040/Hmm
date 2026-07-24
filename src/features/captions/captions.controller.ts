@@ -27,7 +27,7 @@ export const downloadVideoWithCaptions = async (
 
     res.download(
       captionedVideoPath,
-      `reddit_video_${videoId}_captioned.mp4`,
+      `video_${videoId}_captioned.mp4`,
       (err) => {
         if (err) {
           logger.error("Error sending captioned video:", err);

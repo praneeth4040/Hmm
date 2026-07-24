@@ -15,7 +15,7 @@ const envSchema = z.object({
 
   // Hugging Face Storage Bucket (S3 Gateway API)
   HF_NAMESPACE: z.string().min(1, { message: 'HF_NAMESPACE is required (e.g. Praneeth4040)' }),
-  HF_BUCKET_NAME: z.string().min(1, { message: 'HF_BUCKET_NAME is required (e.g. reddit-videos)' }),
+  HF_BUCKET_NAME: z.string().min(1, { message: 'HF_BUCKET_NAME is required (e.g. videos)' }),
   HF_S3_ACCESS_KEY_ID: z.string().min(1, { message: 'HF_S3_ACCESS_KEY_ID is required (starts with HFAK...)' }),
   HF_S3_SECRET_ACCESS_KEY: z.string().min(1, { message: 'HF_S3_SECRET_ACCESS_KEY is required' }),
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -20,6 +21,7 @@ import { RootStackParamList } from '../navigation/types';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useYouTubeChannels, YouTubeChannel } from '../hooks/useYouTubeChannels';
 import { useAccounts, ConnectedAccount } from '../hooks/useAccounts';
+import { useVideos, UserVideo } from '../hooks/useVideos';
 import { useAuth } from '../contexts/AuthContext';
 import { API_BASE_URL } from '../api/client';
 import {
@@ -35,7 +37,11 @@ import {
   Hash,
   Tv2,
   Pencil,
-  UserCircle2,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Film,
 } from 'lucide-react-native';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
@@ -229,6 +235,119 @@ const ar = StyleSheet.create({
   statTxt: { fontSize: 10, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
 });
 
+// ─── Video status badge ───────────────────────────────────────────────────────
+
+const STATUS_CONFIG = {
+  PENDING:    { label: 'Queued',     color: '#F59E0B', bg: '#FFFBEB', icon: Clock },
+  PROCESSING: { label: 'Processing', color: '#3B82F6', bg: '#EFF6FF', icon: RefreshCw },
+  READY:      { label: 'Ready',      color: '#10B981', bg: '#ECFDF5', icon: CheckCircle2 },
+  FAILED:     { label: 'Failed',     color: '#EF4444', bg: '#FEF2F2', icon: XCircle },
+} as const;
+
+function VideoStatusBadge({ status }: { status: UserVideo['status'] }) {
+  const cfg = STATUS_CONFIG[status];
+  const Icon = cfg.icon;
+  return (
+    <View style={[vr.badge, { backgroundColor: cfg.bg }]}>
+      <Icon size={10} color={cfg.color} />
+      <Text style={[vr.badgeTxt, { color: cfg.color }]}>{cfg.label}</Text>
+    </View>
+  );
+}
+
+// ─── Video row card ────────────────────────────────────────────────────────────
+
+function VideoRow({ video }: { video: UserVideo }) {
+  const isReddit = video.source === 'REDDIT';
+  const sourceColor = isReddit ? '#FF4500' : '#FF0000';
+  const sourceLabel = isReddit ? 'Reddit' : 'YouTube';
+  const SourceIcon = isReddit ? Hash : MonitorPlay;
+
+  function fmtSize(bytes: string | null): string {
+    if (!bytes) return '';
+    const b = parseInt(bytes, 10);
+    if (b >= 1_000_000_000) return ` · ${(b / 1_000_000_000).toFixed(1)} GB`;
+    if (b >= 1_000_000)     return ` · ${(b / 1_000_000).toFixed(1)} MB`;
+    return ` · ${(b / 1_000).toFixed(0)} KB`;
+  }
+
+  function fmtAge(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60_000);
+    if (mins < 1)   return 'just now';
+    if (mins < 60)  return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24)   return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  }
+
+  return (
+    <View style={vr.card}>
+      <View style={[vr.sourceIcon, { backgroundColor: sourceColor + '15' }]}>
+        <SourceIcon size={16} color={sourceColor} />
+      </View>
+      <View style={vr.info}>
+        <Text style={vr.title} numberOfLines={2}>
+          {video.title ?? video.url}
+        </Text>
+        <View style={vr.meta}>
+          <Text style={vr.metaTxt}>{sourceLabel}{fmtSize(video.fileSizeBytes)}</Text>
+          <Text style={vr.dot}>·</Text>
+          <Text style={vr.metaTxt}>{fmtAge(video.createdAt)}</Text>
+        </View>
+      </View>
+      <View style={vr.right}>
+        <VideoStatusBadge status={video.status} />
+      </View>
+    </View>
+  );
+}
+
+const vr = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 14,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: Theme.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  sourceIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  info: { flex: 1, gap: 4 },
+  title: {
+    fontSize: 13,
+    fontFamily: Theme.fonts.outfit.semibold,
+    color: Theme.colors.textPrimary,
+    lineHeight: 18,
+  },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaTxt: { fontSize: 11, fontFamily: Theme.fonts.outfit.regular, color: Theme.colors.textSecondary },
+  dot: { fontSize: 11, color: Theme.colors.textSecondary },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  badgeTxt: { fontSize: 10, fontFamily: Theme.fonts.outfit.semibold },
+  right: { alignItems: 'flex-end', gap: 4 },
+});
+
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
 function EmptyAccounts({ onConnect }: { onConnect: () => void }) {
@@ -264,6 +383,15 @@ export default function DashboardScreen() {
   const { token } = useAuth();
   const { channels, loading: channelsLoading, refetch: refetchChannels } = useYouTubeChannels();
   const { accounts, loading: accountsLoading, refetch: refetchAccounts } = useAccounts();
+  const { videos, loading: videosLoading, preparing, refetch: refetchVideos, prepareVideo } = useVideos();
+
+  // Refresh the video list every time the screen comes back into focus
+  // (e.g. after returning from VideoEditor)
+  useFocusEffect(
+    useCallback(() => {
+      refetchVideos();
+    }, [refetchVideos]),
+  );
 
   // Build a map of accountId → channel for O(1) lookup
   const channelByAccountId = useMemo(() => {
@@ -314,10 +442,24 @@ export default function DashboardScreen() {
 
   const source = detectSource(url);
 
-  function handleExtract() {
-    if (!url.trim() || !source) return;
-    Alert.alert('Extracting…', `Starting extraction from ${source === 'reddit' ? 'Reddit' : 'YouTube'}.`);
+  async function handleExtract() {
+    if (!url.trim() || !source || preparing) return;
+    const trimmed = url.trim();
     setUrl('');
+    try {
+      const session = await prepareVideo(trimmed);
+      navigation.navigate('VideoEditor', {
+        sessionId: session.sessionId,
+        title:     session.title,
+        author:    session.author,
+        source:    session.source,
+      });
+    } catch (err: any) {
+      Alert.alert(
+        'Download failed',
+        err?.message ?? 'Could not download the video. Please check the URL and try again.',
+      );
+    }
   }
 
   return (
@@ -385,15 +527,61 @@ export default function DashboardScreen() {
             )}
 
             <TouchableOpacity
-              style={[s.extractBtn, (!url.trim() || !source) && s.extractBtnOff]}
+              style={[s.extractBtn, (!url.trim() || !source || preparing) && s.extractBtnOff]}
               onPress={handleExtract}
-              disabled={!url.trim() || !source}
+              disabled={!url.trim() || !source || preparing}
               activeOpacity={0.85}
             >
-              <Upload size={17} color="#fff" />
-              <Text style={s.extractBtnTxt}>Extract & Process</Text>
+              {preparing
+                ? <ActivityIndicator size="small" color="#fff" />
+                : <Upload size={17} color="#fff" />
+              }
+              <Text style={s.extractBtnTxt}>{preparing ? 'Downloading…' : 'Download & Edit'}</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* ── My Videos ────────────────────────────────────────────────────── */}
+        <View style={s.sectionWrap}>
+          <View style={s.sectionRow}>
+            <View>
+              <Text style={s.sectionTitle}>My Videos</Text>
+              {!videosLoading && (
+                <Text style={s.sectionSub}>
+                  {videos.length > 0
+                    ? `${videos.length} video${videos.length !== 1 ? 's' : ''} · tap to refresh`
+                    : 'No videos yet'}
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity
+              style={s.connectBtn}
+              onPress={refetchVideos}
+              disabled={videosLoading}
+              activeOpacity={0.8}
+            >
+              {videosLoading
+                ? <ActivityIndicator size="small" color={Theme.colors.accent} />
+                : <RefreshCw size={14} color={Theme.colors.accent} />
+              }
+              <Text style={s.connectTxt}>Refresh</Text>
+            </TouchableOpacity>
+          </View>
+
+          {videosLoading && videos.length === 0 ? (
+            <ActivityIndicator color={Theme.colors.accent} style={{ marginVertical: 24 }} />
+          ) : videos.length === 0 ? (
+            <View style={s.emptyVideos}>
+              <Film size={28} color={Theme.colors.border} />
+              <Text style={s.emptyVideosTxt}>Extract a Reddit or YouTube video above to get started</Text>
+            </View>
+          ) : (
+            <View style={s.videoList}>
+              {videos.map((v) => (
+                <VideoRow key={v.id} video={v} />
+              ))}
+            </View>
+          )}
         </View>
 
         {/* ── Connected Accounts (channel + persona merged) ─────────────────── */}
@@ -514,6 +702,22 @@ const s = StyleSheet.create({
   },
 
   accountList: { gap: 10 },
+
+  videoList: { gap: 10 },
+
+  emptyVideos: {
+    alignItems: 'center',
+    paddingVertical: 28,
+    gap: 8,
+  },
+  emptyVideosTxt: {
+    fontSize: 13,
+    fontFamily: Theme.fonts.outfit.regular,
+    color: Theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 19,
+    maxWidth: 260,
+  },
 
   extractCard: {
     backgroundColor: '#fff',
